@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Controle de atendimento, agendamentos e catálogo de produtos para comércios locais.">
+    <title>Plataforma de Comércio Local</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="theme-barber-dark">
+
+    <!-- Header / Navigation -->
+    <header>
+        <div class="navbar">
+            <a href="#" class="logo" id="logo-text">
+                <i class="fa-solid fa-scissors"></i> <span>GlowStyle</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Início</a></li>
+                <li><a href="#catalogo">Catálogo</a></li>
+                <li><a href="#contato">Localização</a></li>
+                <li><button class="btn-secondary" id="btn-admin-open" style="padding: 8px 16px; font-size: 0.85rem;"><i class="fa-solid fa-lock"></i> Painel Admin</button></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-banner-bg" id="hero-banner-image" style="background-image: url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=1200');"></div>
+        <div class="hero-gradient-overlay"></div>
+        <div class="hero-container">
+            <div class="hero-content">
+                <span class="badge" id="hero-badge">Atendimento & Qualidade</span>
+                <h1 class="hero-title" id="hero-title">Estilo e Elegância para o seu <span>Visual</span></h1>
+                <p class="hero-description" id="hero-desc">O melhor atendimento da região com profissionais qualificados, produtos premium e um espaço pensado para o seu bem-estar.</p>
+                <div class="hero-actions">
+                    <a href="#catalogo" class="btn-primary"><i class="fa-solid fa-calendar-days"></i> Agendar Horário</a>
+                    <a href="#catalogo" class="btn-secondary"><i class="fa-solid fa-bag-shopping"></i> Ver Produtos</a>
+                </div>
+            </div>
+            <div class="hero-image-wrapper">
+                <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&q=80&w=600" alt="Destaque da Loja" class="hero-main-image" id="hero-feature-image">
+            </div>
+        </div>
+    </section>
+
+    <!-- Catalog Section -->
+    <section id="catalogo" class="section">
+        <div class="section-header">
+            <span class="section-subtitle">Cardápio de Serviços & Produtos</span>
+            <h2 class="section-title">O que temos para você</h2>
+            <p class="section-desc">Escolha um serviço para agendar um horário ou reserve um produto para retirar na nossa loja física.</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="catalog-filters">
+            <button class="filter-btn active" data-filter="all">Todos</button>
+            <button class="filter-btn" data-filter="servico">Serviços (Agendar)</button>
+            <button class="filter-btn" data-filter="produto">Produtos (Reservar)</button>
+        </div>
+
+        <!-- Catalog Items Grid -->
+        <div class="catalog-grid" id="catalog-grid">
+            <!-- Dynamically populated via app.js -->
+        </div>
+    </section>
+
+    <!-- Contact & Location Footer Section -->
+    <section id="contato" class="section" style="border-top: 1px solid var(--card-border);">
+        <div class="footer-info">
+            <!-- Left Info -->
+            <div class="footer-logo-side">
+                <h3 id="footer-store-name">GlowStyle</h3>
+                <p id="footer-store-desc" style="color: var(--text-secondary); margin-bottom: 20px;">Transformando visual e autoestrada com excelência no atendimento.</p>
+                
+                <p style="margin-bottom: 8px;"><i class="fa-solid fa-phone" style="color: var(--accent-color); margin-right: 8px;"></i> <span id="footer-phone">(11) 99999-9999</span></p>
+                <p style="margin-bottom: 8px;"><i class="fa-solid fa-location-dot" style="color: var(--accent-color); margin-right: 8px;"></i> <span id="footer-address">Rua das Flores, 123 - Centro</span></p>
+                
+                <div class="social-links">
+                    <a href="#" target="_blank" class="social-btn" id="social-whatsapp"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="#" target="_blank" class="social-btn" id="social-instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" target="_blank" class="social-btn" id="social-facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                </div>
+            </div>
+
+            <!-- Middle Info (Hours) -->
+            <div class="glass-card">
+                <h4 style="font-size: 1.2rem; margin-bottom: 20px;"><i class="fa-regular fa-clock" style="color: var(--accent-color); margin-right: 8px;"></i> Horário de Funcionamento</h4>
+                <ul class="opening-hours">
+                    <li>Segunda - Sexta <strong>09:00 - 19:00</strong></li>
+                    <li>Sábado <strong>08:00 - 17:00</strong></li>
+                    <li>Domingo <strong>Fechado</strong></li>
+                </ul>
+            </div>
+
+            <!-- Right Info (Map Placeholder) -->
+            <div class="location-map-container">
+                <div class="location-placeholder-bg" id="location-map-bg" style="background-image: linear-gradient(rgba(15, 17, 26, 0.4), rgba(15, 17, 26, 0.7)), url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=600');">
+                    <div class="map-overlay-text">
+                        <p><i class="fa-solid fa-map-location-dot" style="color: var(--accent-color); font-size: 1.5rem; margin-bottom: 8px; display: block;"></i> Encontre-nos no Mapa</p>
+                        <a href="https://maps.google.com" target="_blank" class="btn-primary" id="btn-google-maps" style="padding: 8px 16px; font-size: 0.85rem;"><i class="fa-solid fa-diamond-turn-right"></i> Como Chegar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Copyright -->
+    <footer style="text-align: center; padding: 30px; border-top: 1px solid var(--card-border); color: var(--text-secondary); font-size: 0.85rem;">
+        <p>&copy; <span id="year-copy">2026</span> <strong id="copyright-brand">GlowStyle</strong>. Todos os direitos reservados. Feito com <i class="fa-solid fa-heart" style="color: #ef4444;"></i> para o comércio local.</p>
+    </footer>
+
+    <!-- MODAL: Scheduling / Booking -->
+    <div class="modal-overlay" id="modal-booking">
+        <div class="modal-content glass-card">
+            <button class="modal-close" data-close="modal-booking"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h3 class="modal-title">Agendar Atendimento</h3>
+                <p class="modal-subtitle" id="booking-item-title">Serviço: Corte de Cabelo</p>
+            </div>
+            <form id="form-booking">
+                <input type="hidden" id="booking-service-id">
+                
+                <div class="form-group">
+                    <label class="form-label" for="booking-date">Data</label>
+                    <input type="date" id="booking-date" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Horários Disponíveis</label>
+                    <div class="slots-container" id="slots-container">
+                        <!-- slots populated dynamically -->
+                    </div>
+                    <input type="hidden" id="booking-time" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="booking-name">Seu Nome</label>
+                    <input type="text" id="booking-name" class="form-control" placeholder="Digite seu nome completo" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="booking-phone">Telefone / WhatsApp</label>
+                    <input type="tel" id="booking-phone" class="form-control" placeholder="(11) 99999-9999" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="booking-notes">Observações (Opcional)</label>
+                    <textarea id="booking-notes" class="form-control" rows="2" placeholder="Alguma preferência ou detalhe específico?"></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;"><i class="fa-solid fa-calendar-check"></i> Confirmar Agendamento</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Product Reservation -->
+    <div class="modal-overlay" id="modal-reserve">
+        <div class="modal-content glass-card">
+            <button class="modal-close" data-close="modal-reserve"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h3 class="modal-title">Reservar Produto</h3>
+                <p class="modal-subtitle">Reserve online e retire diretamente na nossa loja</p>
+            </div>
+            
+            <div class="selected-product-box">
+                <img src="" alt="" class="selected-product-img" id="reserve-product-img">
+                <div class="selected-product-info">
+                    <span class="selected-product-name" id="reserve-product-name">Pomada Modeladora</span>
+                    <span class="selected-product-price" id="reserve-product-price">R$ 45,00</span>
+                </div>
+            </div>
+
+            <form id="form-reserve">
+                <input type="hidden" id="reserve-product-id">
+
+                <div class="form-group">
+                    <label class="form-label" for="reserve-name">Seu Nome</label>
+                    <input type="text" id="reserve-name" class="form-control" placeholder="Digite seu nome completo" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="reserve-phone">Telefone / WhatsApp</label>
+                    <input type="tel" id="reserve-phone" class="form-control" placeholder="(11) 99999-9999" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="reserve-qty">Quantidade</label>
+                    <select id="reserve-qty" class="form-control">
+                        <option value="1">1 unidade</option>
+                        <option value="2">2 unidades</option>
+                        <option value="3">3 unidades</option>
+                        <option value="4">4 unidades</option>
+                        <option value="5">5 unidades</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;"><i class="fa-solid fa-bag-shopping"></i> Finalizar Reserva</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Admin Login -->
+    <div class="modal-overlay" id="modal-admin-login">
+        <div class="modal-content glass-card" style="max-width: 400px;">
+            <button class="modal-close" data-close="modal-admin-login"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h3 class="modal-title">Acesso Restrito</h3>
+                <p class="modal-subtitle">Insira a senha do administrador para acessar o painel</p>
+            </div>
+            <form id="form-admin-login">
+                <div class="form-group">
+                    <label class="form-label" for="admin-password">Senha</label>
+                    <input type="password" id="admin-password" class="form-control" placeholder="Digite a senha administrativa" required autocomplete="current-password">
+                    <small style="color: var(--text-secondary); margin-top: 6px; display: block;">Dica de teste: use a senha <strong>admin</strong></small>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;"><i class="fa-solid fa-right-to-bracket"></i> Entrar no Painel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD OVERLAY -->
+    <div class="admin-overlay" id="admin-dashboard">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-top">
+                <h2><i class="fa-solid fa-gears"></i> Painel <span>Admin</span></h2>
+                <nav class="admin-nav">
+                    <button class="admin-nav-btn active" data-tab="tab-settings"><i class="fa-solid fa-sliders"></i> Personalização</button>
+                    <button class="admin-nav-btn" data-tab="tab-catalog"><i class="fa-solid fa-boxes-stacked"></i> Catálogo</button>
+                    <button class="admin-nav-btn" data-tab="tab-bookings"><i class="fa-solid fa-calendar-check"></i> Agendamentos</button>
+                </nav>
+            </div>
+            <button class="btn-secondary" id="btn-admin-logout" style="width: 100%; justify-content: center;"><i class="fa-solid fa-right-from-bracket"></i> Sair do Painel</button>
+        </aside>
+
+        <!-- Dynamic Content Panel -->
+        <main class="admin-panel">
+            
+            <!-- TAB 1: BRANDING & SETTINGS -->
+            <div class="admin-tab-pane active" id="tab-settings">
+                <div class="admin-panel-header">
+                    <h2 class="admin-panel-title">Personalização do Comércio</h2>
+                    <span class="badge">Ajustes Gerais</span>
+                </div>
+                <form id="form-settings" class="settings-grid">
+                    <div class="settings-column">
+                        <div class="glass-card">
+                            <h3 style="margin-bottom: 20px; font-size: 1.15rem;"><i class="fa-solid fa-id-card" style="color: var(--accent-color); margin-right: 8px;"></i> Identidade da Loja</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="settings-store-name">Nome do Comércio</label>
+                                    <input type="text" id="settings-store-name" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="settings-badge">Texto do Destaque (Badge)</label>
+                                    <input type="text" id="settings-badge" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="settings-description">Descrição Curta</label>
+                                <textarea id="settings-description" class="form-control" rows="2" required></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="settings-banner-url">URL da Imagem do Banner</label>
+                                    <input type="url" id="settings-banner-url" class="form-control" placeholder="https://exemplo.com/imagem.jpg" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="settings-feature-url">URL da Imagem de Destaque</label>
+                                    <input type="url" id="settings-feature-url" class="form-control" placeholder="https://exemplo.com/destaque.jpg" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card">
+                            <h3 style="margin-bottom: 20px; font-size: 1.15rem;"><i class="fa-solid fa-address-book" style="color: var(--accent-color); margin-right: 8px;"></i> Contatos & Endereço</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="settings-phone">Telefone / WhatsApp</label>
+                                    <input type="text" id="settings-phone" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="settings-instagram">Instagram (Apenas Usuário)</label>
+                                    <div style="position: relative;">
+                                        <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.9rem;">@</span>
+                                        <input type="text" id="settings-instagram" class="form-control" style="padding-left: 28px;" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="settings-address">Endereço Físico</label>
+                                <input type="text" id="settings-address" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="settings-maps-url">Link do Google Maps (Como Chegar)</label>
+                                <input type="url" id="settings-maps-url" class="form-control" placeholder="https://maps.google.com/..." required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-column">
+                        <div class="glass-card">
+                            <h3 style="margin-bottom: 20px; font-size: 1.15rem;"><i class="fa-solid fa-palette" style="color: var(--accent-color); margin-right: 8px;"></i> Tema Visual</h3>
+                            <div class="theme-card-selector">
+                                <div class="theme-option" data-theme="barber-dark">
+                                    <strong>Barbearia</strong>
+                                    <div class="theme-preview-dots">
+                                        <div class="theme-dot" style="background-color: #0f111a;"></div>
+                                        <div class="theme-dot" style="background-color: #f59e0b;"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-option" data-theme="rose-gold">
+                                    <strong>Salão / Rosa</strong>
+                                    <div class="theme-preview-dots">
+                                        <div class="theme-dot" style="background-color: #faf8f6;"></div>
+                                        <div class="theme-dot" style="background-color: #d4a373;"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-option" data-theme="emerald-spa">
+                                    <strong>Spa Verde</strong>
+                                    <div class="theme-preview-dots">
+                                        <div class="theme-dot" style="background-color: #0a120e;"></div>
+                                        <div class="theme-dot" style="background-color: #10b981;"></div>
+                                    </div>
+                                </div>
+                                <div class="theme-option" data-theme="cyberpunk">
+                                    <strong>Neon Cyber</strong>
+                                    <div class="theme-preview-dots">
+                                        <div class="theme-dot" style="background-color: #0c0813;"></div>
+                                        <div class="theme-dot" style="background-color: #ec4899;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="settings-theme" value="barber-dark">
+                        </div>
+
+                        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; height: 50px;"><i class="fa-solid fa-floppy-disk"></i> Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TAB 2: CATALOG MANAGER -->
+            <div class="admin-tab-pane" id="tab-catalog">
+                <div class="admin-panel-header">
+                    <h2 class="admin-panel-title">Gerenciar Serviços & Produtos</h2>
+                    <button class="btn-primary" id="btn-catalog-add"><i class="fa-solid fa-plus"></i> Novo Item</button>
+                </div>
+
+                <div class="admin-catalog-grid" id="admin-catalog-grid">
+                    <!-- Dynamically populated via app.js -->
+                </div>
+            </div>
+
+            <!-- TAB 3: RESERVATIONS & BOOKINGS -->
+            <div class="admin-tab-pane" id="tab-bookings">
+                <div class="admin-panel-header">
+                    <h2 class="admin-panel-title">Registro de Agendamentos e Reservas</h2>
+                    <span class="badge" id="bookings-count">0 Registros</span>
+                </div>
+
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Contato</th>
+                                <th>Tipo</th>
+                                <th>Item / Serviço</th>
+                                <th>Data / Detalhe</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-bookings-rows">
+                            <!-- Dynamically populated via app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL: Add / Edit Product or Service -->
+    <div class="modal-overlay" id="modal-catalog-form">
+        <div class="modal-content glass-card">
+            <button class="modal-close" data-close="modal-catalog-form"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header">
+                <h3 class="modal-title" id="catalog-form-title">Novo Item no Catálogo</h3>
+                <p class="modal-subtitle">Adicione ou edite um serviço ou produto</p>
+            </div>
+            
+            <form id="form-catalog-item">
+                <input type="hidden" id="catalog-item-id">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="catalog-item-name">Nome do Item</label>
+                        <input type="text" id="catalog-item-name" class="form-control" placeholder="Ex: Corte Degradê / Creme Hidratante" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="catalog-item-type">Tipo de Registro</label>
+                        <select id="catalog-item-type" class="form-control" required>
+                            <option value="servico">Serviço (Agendamento)</option>
+                            <option value="produto">Produto (Venda/Reserva)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="catalog-item-price">Valor (R$)</label>
+                        <input type="number" id="catalog-item-price" class="form-control" step="0.01" placeholder="0,00" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="catalog-item-category">Categoria / Badge</label>
+                        <input type="text" id="catalog-item-category" class="form-control" placeholder="Ex: Cabelo, Barba, Unhas, Creme" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="catalog-item-image">URL da Imagem</label>
+                    <input type="url" id="catalog-item-image" class="form-control" placeholder="https://images.unsplash.com/..." required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="catalog-item-description">Descrição Completa</label>
+                    <textarea id="catalog-item-description" class="form-control" rows="3" placeholder="Insira detalhes sobre o serviço ou produto..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;"><i class="fa-solid fa-circle-check"></i> Salvar no Catálogo</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Frontend Application Logic Script -->
+    <script src="app.js"></script>
+</body>
+</html>
