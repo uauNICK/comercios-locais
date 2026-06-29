@@ -1037,7 +1037,7 @@ class LocalBizApp {
             this.showToast("Configurações salvas com sucesso!");
         } catch (err) {
             console.error("Failed to save settings", err);
-            this.showToast("Erro ao salvar as configurações.", "error");
+            this.showToast(err.message || "Erro ao salvar as configurações.", "error");
         }
     }
 
@@ -1124,7 +1124,7 @@ class LocalBizApp {
             this.renderAdminCatalog();
         } catch (err) {
             console.error("Failed to save catalog item", err);
-            this.showToast("Erro ao salvar o item.", "error");
+            this.showToast(err.message || "Erro ao salvar o item.", "error");
         }
     }
 
@@ -1261,9 +1261,9 @@ class LocalBizApp {
                     const dataUrl = canvas.toDataURL("image/jpeg", quality);
                     resolve(dataUrl);
                 };
-                img.onerror = (err) => reject(err);
+                img.onerror = () => reject(new Error("Formato de imagem não suportado. Use JPG, PNG ou WEBP."));
             };
-            reader.onerror = (err) => reject(err);
+            reader.onerror = () => reject(new Error("Erro ao ler o arquivo de imagem do dispositivo."));
         });
     }
 }
