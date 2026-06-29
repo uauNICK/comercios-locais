@@ -101,12 +101,12 @@ const DEFAULT_DB = {
 
 // Configuração do Firebase (Substitua pelas credenciais do seu console do Firebase)
 const firebaseConfig = {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyCtPTnYCGwXwTKyXUwHEmPz9Uzv5PABGGc",
+    authDomain: "plataforma-cantinhodosaborvr.firebaseapp.com",
+    projectId: "plataforma-cantinhodosaborvr",
+    storageBucket: "plataforma-cantinhodosaborvr.firebasestorage.app",
+    messagingSenderId: "910821162996",
+    appId: "1:910821162996:web:3480f67a67acf15fef83a1"
 };
 
 const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "";
