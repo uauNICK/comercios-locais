@@ -395,6 +395,32 @@
                             <input type="hidden" id="settings-theme" value="barber-dark">
                         </div>
 
+                        <!-- Card de Gerenciamento de Categorias -->
+                        <div class="glass-card" style="margin-top: 20px;">
+                            <h3 style="margin-bottom: 15px; font-size: 1.15rem;"><i class="fa-solid fa-tags" style="color: var(--accent-color); margin-right: 8px;"></i> Categorias do Catálogo</h3>
+                            
+                            <!-- Lista de categorias existentes -->
+                            <div id="admin-categories-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; max-height: 150px; overflow-y: auto;">
+                                <!-- dynamically populated -->
+                            </div>
+                            
+                            <!-- Formulário de cadastro de nova categoria -->
+                            <div style="border-top: 1px solid var(--card-border); padding-top: 15px;">
+                                <div class="form-group" style="margin-bottom: 10px;">
+                                    <input type="text" id="new-category-name" class="form-control" style="height: 36px; font-size: 0.85rem;" placeholder="Nome da nova categoria">
+                                </div>
+                                <div class="form-row" style="gap: 8px; margin-bottom: 10px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <select id="new-category-type" class="form-control" style="height: 36px; font-size: 0.85rem; padding: 4px 8px;">
+                                            <option value="produto">Produto (Reserva)</option>
+                                            <option value="servico">Serviço (Contato)</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn-primary" id="btn-add-category" style="height: 36px; padding: 0 12px; font-size: 0.85rem; justify-content: center;"><i class="fa-solid fa-plus"></i> Add</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; height: 50px;"><i class="fa-solid fa-floppy-disk"></i> Salvar Alterações</button>
                         <button type="button" class="btn-secondary" id="btn-admin-back-settings" style="width: 100%; justify-content: center; height: 50px; margin-top: 10px;"><i class="fa-solid fa-eye"></i> Voltar ao Site</button>
                     </div>
@@ -460,10 +486,9 @@
                         <input type="text" id="catalog-item-name" class="form-control" placeholder="Ex: Corte Degradê / Creme Hidratante" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="catalog-item-type">Tipo de Registro</label>
-                        <select id="catalog-item-type" class="form-control" required>
-                            <option value="servico">Serviço (Agendamento)</option>
-                            <option value="produto">Produto (Venda/Reserva)</option>
+                        <label class="form-label" for="catalog-item-category-id">Categoria</label>
+                        <select id="catalog-item-category-id" class="form-control" required>
+                            <!-- Dynamically populated -->
                         </select>
                     </div>
                 </div>
@@ -473,10 +498,8 @@
                         <label class="form-label" for="catalog-item-price">Valor (R$)</label>
                         <input type="number" id="catalog-item-price" class="form-control" step="0.01" placeholder="0,00" required>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="catalog-item-category">Categoria / Badge</label>
-                        <input type="text" id="catalog-item-category" class="form-control" placeholder="Ex: Cabelo, Barba, Unhas, Creme" required>
-                    </div>
+                    <input type="hidden" id="catalog-item-type">
+                    <input type="hidden" id="catalog-item-category">
                 </div>
 
                 <div class="form-row">

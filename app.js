@@ -17,7 +17,12 @@ const DEFAULT_DB = {
         hoursSaturdayEnd: "17:00",
         hoursSundayOpen: false,
         hoursSundayStart: "09:00",
-        hoursSundayEnd: "13:00"
+        hoursSundayEnd: "13:00",
+        categories: [
+            { id: "cat_1", name: "Serviços", type: "servico" },
+            { id: "cat_2", name: "Lanches", type: "produto" },
+            { id: "cat_3", name: "Bebidas", type: "produto" }
+        ]
     },
     catalog: [
         {
@@ -168,6 +173,13 @@ class LocalBizApp {
                 let settings = {};
                 if (settingsDoc.exists) {
                     settings = settingsDoc.data();
+                    if (!settings.categories) {
+                        settings.categories = [
+                            { id: "cat_1", name: "Serviços", type: "servico" },
+                            { id: "cat_2", name: "Lanches", type: "produto" },
+                            { id: "cat_3", name: "Bebidas", type: "produto" }
+                        ];
+                    }
                 } else {
                     settings = DEFAULT_DB.settings;
                     await db.collection("settings").doc("store").set(settings);
@@ -209,7 +221,15 @@ class LocalBizApp {
         const stored = localStorage.getItem("local_biz_db");
         if (stored) {
             try {
-                return JSON.parse(stored);
+                const parsed = JSON.parse(stored);
+                if (parsed.settings && !parsed.settings.categories) {
+                    parsed.settings.categories = [
+                        { id: "cat_1", name: "Serviços", type: "servico" },
+                        { id: "cat_2", name: "Lanches", type: "produto" },
+                        { id: "cat_3", name: "Bebidas", type: "produto" }
+                    ];
+                }
+                return parsed;
             } catch (e) {
                 console.error("Erro ao ler LocalStorage, usando valores mockados.", e);
             }
@@ -360,6 +380,10 @@ class LocalBizApp {
         if (featureFileEl) featureFileEl.value = "";
 
         document.getElementById("settings-phone").value = s.phone;
+        
+        // Render dynamic categories
+        this.renderFilters();
+        this.renderAdminCategories();
         document.getElementById("settings-instagram").value = s.instagram;
         document.getElementById("settings-address").value = s.address;
         document.getElementById("settings-maps-url").value = s.mapsUrl;
@@ -728,6 +752,12 @@ class LocalBizApp {
                 sunRow.style.display = checkSunOpen.checked ? "grid" : "none";
             });
         }
+
+        // Add Category Trigger
+        const btnAddCat = document.getElementById("btn-add-category");
+        if (btnAddCat) {
+            btnAddCat.addEventListener("click", () => this.addCategory());
+        }
     }
 
     // Modal Control Utils
@@ -1047,6 +1077,19 @@ class LocalBizApp {
     openCatalogFormModal(itemId = null) {
         this.formCatalogItem.reset();
         if (this.catalogItemImageFile) this.catalogItemImageFile.value = "";
+
+        // Populate Category Dropdown select options
+        const categorySelect = document.getElementById("catalog-item-category-id");
+        if (categorySelect) {
+            categorySelect.innerHTML = "";
+            const categories = this.db.settings.categories || [];
+            categories.forEach(cat => {
+                const opt = document.createElement("option");
+                opt.value = cat.id;
+                opt.textContent = `${cat.name} (${cat.type === 'servico' ? 'Contato' : 'Reserva'})`;
+                categorySelect.appendChild(opt);
+            });
+        }
         
         if (itemId) {
             const item = this.db.catalog.find(i => i.id === itemId);
@@ -1055,11 +1098,15 @@ class LocalBizApp {
             this.catalogFormTitle.textContent = "Editar Item";
             this.catalogItemId.value = item.id;
             document.getElementById("catalog-item-name").value = item.name;
-            document.getElementById("catalog-item-type").value = item.type;
             document.getElementById("catalog-item-price").value = item.price;
-            document.getElementById("catalog-item-category").value = item.category;
             document.getElementById("catalog-item-image").value = item.image;
             document.getElementById("catalog-item-description").value = item.description;
+
+            // Preselect correct category ID option based on name match
+            const catObj = (this.db.settings.categories || []).find(c => c.name === item.category);
+            if (catObj && categorySelect) {
+                categorySelect.value = catObj.id;
+            }
         } else {
             this.catalogFormTitle.textContent = "Novo Item no Catálogo";
             this.catalogItemId.value = "";
@@ -1073,11 +1120,16 @@ class LocalBizApp {
 
         const id = this.catalogItemId.value;
         const name = document.getElementById("catalog-item-name").value.trim();
-        const type = document.getElementById("catalog-item-type").value;
+        const categoryId = document.getElementById("catalog-item-category-id").value;
         const price = parseFloat(document.getElementById("catalog-item-price").value);
-        const category = document.getElementById("catalog-item-category").value.trim();
         let imageUrl = document.getElementById("catalog-item-image").value.trim();
         const description = document.getElementById("catalog-item-description").value.trim();
+
+        // Resolve type and category name from selected category metadata
+        const categories = this.db.settings.categories || [];
+        const selectedCat = categories.find(c => c.id === categoryId) || { name: "Geral", type: "produto" };
+        const type = selectedCat.type;
+        const category = selectedCat.name;
 
         const file = this.catalogItemImageFile && this.catalogItemImageFile.files[0];
 
@@ -1267,6 +1319,138 @@ class LocalBizApp {
             };
             reader.onerror = () => reject(new Error("Erro ao ler o arquivo de imagem do dispositivo."));
         });
+    }
+
+    renderFilters() {
+        const container = document.querySelector(".catalog-filters");
+        if (!container) return;
+        
+        const categories = this.db.settings.categories || [];
+        
+        // Start with "Todos" button
+        let html = `<button class="filter-btn ${this.activeFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>`;
+        
+        categories.forEach(cat => {
+            const activeClass = this.activeFilter === cat.name ? 'active' : '';
+            html += `<button class="filter-btn ${activeClass}" data-filter="${cat.name}">${cat.name}</button>`;
+        });
+        
+        container.innerHTML = html;
+        
+        // Rebind filter buttons
+        container.querySelectorAll(".filter-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                container.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                this.activeFilter = btn.dataset.filter;
+                this.renderCatalog();
+            });
+        });
+    }
+
+    renderAdminCategories() {
+        const listContainer = document.getElementById("admin-categories-list");
+        if (!listContainer) return;
+        
+        listContainer.innerHTML = "";
+        const categories = this.db.settings.categories || [];
+        
+        if (categories.length === 0) {
+            listContainer.innerHTML = `<span style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 10px 0;">Nenhuma categoria criada.</span>`;
+            return;
+        }
+        
+        categories.forEach(cat => {
+            const div = document.createElement("div");
+            div.style.display = "flex";
+            div.style.justifyContent = "space-between";
+            div.style.alignItems = "center";
+            div.style.background = "rgba(255, 255, 255, 0.02)";
+            div.style.padding = "6px 12px";
+            div.style.borderRadius = "6px";
+            div.style.border = "1px solid var(--card-border)";
+            
+            div.innerHTML = `
+                <span style="font-size: 0.85rem; font-weight: 500;">${cat.name} <small style="color: var(--text-secondary); font-size: 0.75rem;">(${cat.type === 'servico' ? 'Contato' : 'Reserva'})</small></span>
+                <button type="button" class="btn-delete-cat" data-id="${cat.id}" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 4px;"><i class="fa-solid fa-trash-can"></i></button>
+            `;
+            
+            listContainer.appendChild(div);
+        });
+        
+        // Bind category delete triggers
+        listContainer.querySelectorAll(".btn-delete-cat").forEach(btn => {
+            btn.addEventListener("click", () => this.deleteCategory(btn.dataset.id));
+        });
+    }
+
+    deleteCategory(catId) {
+        const categories = this.db.settings.categories || [];
+        if (categories.length <= 1) {
+            this.showToast("Você precisa manter pelo menos uma categoria ativa!", "error");
+            return;
+        }
+        
+        const catToDelete = categories.find(c => c.id === catId);
+        if (confirm(`Deseja realmente excluir a categoria "${catToDelete.name}"? Os itens vinculados a ela não serão excluídos, mas você precisará reclassificá-los.`)) {
+            this.db.settings.categories = categories.filter(c => c.id !== catId);
+            
+            // Sync categories deletion to Firebase Firestore settings document if connected
+            if (isFirebaseConfigured) {
+                db.collection("settings").doc("store").set(this.db.settings).catch(err => {
+                    console.error("Failed to sync categories deletion to Firestore", err);
+                });
+            }
+            this.saveDatabase();
+            this.renderAdminCategories();
+            this.renderFilters();
+            this.renderCatalog();
+            this.showToast("Categoria removida.", "error");
+        }
+    }
+
+    addCategory() {
+        const nameInput = document.getElementById("new-category-name");
+        const typeInput = document.getElementById("new-category-type");
+        
+        if (!nameInput || !typeInput) return;
+        
+        const name = nameInput.value.trim();
+        const type = typeInput.value;
+        
+        if (!name) {
+            this.showToast("Digite o nome da categoria!", "error");
+            return;
+        }
+        
+        const categories = this.db.settings.categories || [];
+        const exists = categories.some(c => c.name.toLowerCase() === name.toLowerCase());
+        
+        if (exists) {
+            this.showToast("Essa categoria já existe!", "error");
+            return;
+        }
+        
+        const newCat = {
+            id: "cat_" + Date.now(),
+            name,
+            type
+        };
+        
+        this.db.settings.categories = [...categories, newCat];
+        
+        // Sync categories addition to Firebase Firestore settings document if connected
+        if (isFirebaseConfigured) {
+            db.collection("settings").doc("store").set(this.db.settings).catch(err => {
+                console.error("Failed to sync categories addition to Firestore", err);
+            });
+        }
+        this.saveDatabase();
+        
+        nameInput.value = "";
+        this.renderAdminCategories();
+        this.renderFilters();
+        this.showToast(`Categoria "${name}" adicionada com sucesso!`);
     }
 }
 
