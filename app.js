@@ -490,7 +490,7 @@ class LocalBizApp {
 
         const filtered = this.db.catalog.filter(item => {
             if (this.activeFilter === "all") return true;
-            return item.type === this.activeFilter;
+            return item.category === this.activeFilter;
         });
 
         if (filtered.length === 0) {
