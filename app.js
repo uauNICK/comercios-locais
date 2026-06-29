@@ -334,6 +334,8 @@ class LocalBizApp {
         // Contact links
         if (this.socialWhatsapp) this.socialWhatsapp.href = `https://wa.me/${s.phone}`;
         if (this.socialInstagram) this.socialInstagram.href = `https://instagram.com/${s.instagram}`;
+        const btnHeroContact = document.getElementById("btn-hero-contact");
+        if (btnHeroContact) btnHeroContact.href = `https://wa.me/${s.phone}`;
         if (this.socialFacebook) this.socialFacebook.href = `https://facebook.com`;
         if (this.btnGoogleMaps) this.btnGoogleMaps.href = s.mapsUrl;
 
