@@ -351,6 +351,12 @@ class LocalBizApp {
         document.getElementById("settings-description").value = s.storeDesc;
         document.getElementById("settings-banner-url").value = s.bannerUrl;
         document.getElementById("settings-feature-url").value = s.featureUrl;
+
+        const bannerFileEl = document.getElementById("settings-banner-file");
+        const featureFileEl = document.getElementById("settings-feature-file");
+        if (bannerFileEl) bannerFileEl.value = "";
+        if (featureFileEl) featureFileEl.value = "";
+
         document.getElementById("settings-phone").value = s.phone;
         document.getElementById("settings-instagram").value = s.instagram;
         document.getElementById("settings-address").value = s.address;
@@ -989,8 +995,6 @@ class LocalBizApp {
         this.db.settings.storeName = document.getElementById("settings-store-name").value.trim();
         this.db.settings.badge = document.getElementById("settings-badge").value.trim();
         this.db.settings.storeDesc = document.getElementById("settings-description").value.trim();
-        this.db.settings.bannerUrl = document.getElementById("settings-banner-url").value.trim();
-        this.db.settings.featureUrl = document.getElementById("settings-feature-url").value.trim();
         this.db.settings.phone = this.cleanPhoneNumber(document.getElementById("settings-phone").value);
         this.db.settings.instagram = document.getElementById("settings-instagram").value.replace("@", "").trim();
         this.db.settings.address = document.getElementById("settings-address").value.trim();
@@ -1006,7 +1010,24 @@ class LocalBizApp {
         this.db.settings.hoursSundayStart = document.getElementById("settings-hours-sun-start").value;
         this.db.settings.hoursSundayEnd = document.getElementById("settings-hours-sun-end").value;
 
+        const bannerFile = document.getElementById("settings-banner-file").files[0];
+        const featureFile = document.getElementById("settings-feature-file").files[0];
+
         try {
+            if (bannerFile) {
+                this.showToast("Otimizando imagem do banner...");
+                this.db.settings.bannerUrl = await this.compressImage(bannerFile);
+            } else {
+                this.db.settings.bannerUrl = document.getElementById("settings-banner-url").value.trim();
+            }
+
+            if (featureFile) {
+                this.showToast("Otimizando imagem de destaque...");
+                this.db.settings.featureUrl = await this.compressImage(featureFile);
+            } else {
+                this.db.settings.featureUrl = document.getElementById("settings-feature-url").value.trim();
+            }
+
             if (isFirebaseConfigured) {
                 await db.collection("settings").doc("store").set(this.db.settings);
             }
@@ -1015,7 +1036,7 @@ class LocalBizApp {
             this.renderCatalog();
             this.showToast("Configurações salvas com sucesso!");
         } catch (err) {
-            console.error("Failed to save settings to Firebase", err);
+            console.error("Failed to save settings", err);
             this.showToast("Erro ao salvar as configurações.", "error");
         }
     }
