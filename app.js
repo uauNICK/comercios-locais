@@ -99,6 +99,31 @@ const DEFAULT_DB = {
     ]
 };
 
+// Configuração do Firebase (Substitua pelas credenciais do seu console do Firebase)
+const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: ""
+};
+
+const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "";
+let db = null;
+let auth = null;
+
+if (isFirebaseConfigured) {
+    try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+        console.log("Firebase inicializado com sucesso!");
+    } catch (err) {
+        console.error("Falha ao inicializar o Firebase. Fallback para LocalStorage ativo.", err);
+    }
+}
+
 // Available Time Slots for Booking
 const TIME_SLOTS = [
     "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
@@ -107,32 +132,96 @@ const TIME_SLOTS = [
 // App State Management
 class LocalBizApp {
     constructor() {
-        this.db = this.loadDatabase();
+        this.db = null;
         this.activeFilter = "all";
-        this.selectedTheme = this.db.settings.theme || "barber-dark";
         this.initDOM();
-        this.applyBranding();
-        this.renderCatalog();
         this.setupEventListeners();
-        this.checkAdminSession();
+
+        // Inicialização assíncrona dos dados
+        this.loadDatabase().then((database) => {
+            this.db = database;
+            this.selectedTheme = this.db.settings.theme || "barber-dark";
+            this.applyBranding();
+            this.renderCatalog();
+            this.checkAdminSession();
+
+            // Ajusta instruções de login baseadas na configuração ativa
+            const helperText = document.getElementById("login-helper-text");
+            if (helperText) {
+                if (isFirebaseConfigured) {
+                    helperText.innerHTML = `Faça login usando o e-mail e senha cadastrados no console do Firebase Authentication.`;
+                } else {
+                    helperText.innerHTML = `Modo local: e-mail <strong>admin@admin.com</strong> e senha <strong>admin</strong>`;
+                }
+            }
+        }).catch((err) => {
+            console.error("Falha ao carregar banco de dados", err);
+            this.showToast("Erro ao carregar banco de dados", "error");
+        });
     }
 
-    loadDatabase() {
+    async loadDatabase() {
+        if (isFirebaseConfigured) {
+            try {
+                // Configurações
+                const settingsDoc = await db.collection("settings").doc("store").get();
+                let settings = {};
+                if (settingsDoc.exists) {
+                    settings = settingsDoc.data();
+                } else {
+                    settings = DEFAULT_DB.settings;
+                    await db.collection("settings").doc("store").set(settings);
+                }
+
+                // Catálogo
+                const catalogSnapshot = await db.collection("catalog").get();
+                let catalog = [];
+                if (!catalogSnapshot.empty) {
+                    catalogSnapshot.forEach(doc => {
+                        catalog.push({ id: doc.id, ...doc.data() });
+                    });
+                } else {
+                    for (const item of DEFAULT_DB.catalog) {
+                        const { id, ...data } = item;
+                        await db.collection("catalog").doc(id).set(data);
+                        catalog.push(item);
+                    }
+                }
+
+                // Agendamentos
+                const bookingsSnapshot = await db.collection("bookings").get();
+                let bookings = [];
+                bookingsSnapshot.forEach(doc => {
+                    bookings.push({ id: doc.id, ...doc.data() });
+                });
+
+                return { settings, catalog, bookings };
+            } catch (err) {
+                console.error("Falha ao carregar dados do Firebase. Usando LocalStorage...", err);
+                return this.loadDatabaseLocalStorage();
+            }
+        } else {
+            return this.loadDatabaseLocalStorage();
+        }
+    }
+
+    loadDatabaseLocalStorage() {
         const stored = localStorage.getItem("local_biz_db");
         if (stored) {
             try {
                 return JSON.parse(stored);
             } catch (e) {
-                console.error("Error parsing database, falling back to mock details.", e);
+                console.error("Erro ao ler LocalStorage, usando valores mockados.", e);
             }
         }
-        // Save initial default database to localStorage
         localStorage.setItem("local_biz_db", JSON.stringify(DEFAULT_DB));
         return JSON.parse(JSON.stringify(DEFAULT_DB));
     }
 
     saveDatabase() {
-        localStorage.setItem("local_biz_db", JSON.stringify(this.db));
+        if (!isFirebaseConfigured) {
+            localStorage.setItem("local_biz_db", JSON.stringify(this.db));
+        }
     }
 
     initDOM() {
@@ -688,7 +777,7 @@ class LocalBizApp {
         });
     }
 
-    handleBookingSubmit(e) {
+    async handleBookingSubmit(e) {
         e.preventDefault();
 
         const serviceId = this.bookingServiceId.value;
@@ -705,8 +794,9 @@ class LocalBizApp {
         }
 
         // Save to Database
+        const newId = "b_" + Date.now();
         const newBooking = {
-            id: "b_" + Date.now(),
+            id: newId,
             clientName: nameVal,
             phone: phoneVal,
             type: "servico",
@@ -716,28 +806,37 @@ class LocalBizApp {
             notes: notesVal
         };
 
-        this.db.bookings.push(newBooking);
-        this.saveDatabase();
+        try {
+            if (isFirebaseConfigured) {
+                const { id, ...data } = newBooking;
+                await db.collection("bookings").doc(newId).set(data);
+            }
+            this.db.bookings.push(newBooking);
+            this.saveDatabase();
 
-        this.showToast("Agendamento salvo com sucesso!");
-        this.closeModal("modal-booking");
-        this.formBooking.reset();
+            this.showToast("Agendamento salvo com sucesso!");
+            this.closeModal("modal-booking");
+            this.formBooking.reset();
 
-        // Redirect to WhatsApp Link
-        const formattedDate = this.formatDateBR(dateVal);
-        const message = `Olá! Gostaria de confirmar meu agendamento:\n\n` +
-                        `🔹 *Serviço:* ${service.name}\n` +
-                        `📅 *Data:* ${formattedDate}\n` +
-                        `⏰ *Horário:* ${timeVal}\n` +
-                        `👤 *Nome:* ${nameVal}\n` +
-                        `📞 *Contato:* ${this.formatPhoneDisplay(phoneVal)}` +
-                        (notesVal ? `\n📝 *Notas:* ${notesVal}` : "");
+            // Redirect to WhatsApp Link
+            const formattedDate = this.formatDateBR(dateVal);
+            const message = `Olá! Gostaria de confirmar meu agendamento:\n\n` +
+                            `🔹 *Serviço:* ${service.name}\n` +
+                            `📅 *Data:* ${formattedDate}\n` +
+                            `⏰ *Horário:* ${timeVal}\n` +
+                            `👤 *Nome:* ${nameVal}\n` +
+                            `📞 *Contato:* ${this.formatPhoneDisplay(phoneVal)}` +
+                            (notesVal ? `\n📝 *Notas:* ${notesVal}` : "");
 
-        const waUrl = `https://api.whatsapp.com/send?phone=${this.db.settings.phone}&text=${encodeURIComponent(message)}`;
-        
-        setTimeout(() => {
-            window.open(waUrl, "_blank");
-        }, 800);
+            const waUrl = `https://api.whatsapp.com/send?phone=${this.db.settings.phone}&text=${encodeURIComponent(message)}`;
+            
+            setTimeout(() => {
+                window.open(waUrl, "_blank");
+            }, 800);
+        } catch (err) {
+            console.error("Failed to save booking", err);
+            this.showToast("Erro ao salvar o agendamento.", "error");
+        }
     }
 
     openReserveModal(productId) {
@@ -755,7 +854,7 @@ class LocalBizApp {
         this.openModal("modal-reserve");
     }
 
-    handleReserveSubmit(e) {
+    async handleReserveSubmit(e) {
         e.preventDefault();
 
         const productId = this.reserveProductId.value;
@@ -767,8 +866,9 @@ class LocalBizApp {
         const totalCost = product.price * qtyVal;
 
         // Save to Database
+        const newId = "r_" + Date.now();
         const newReservation = {
-            id: "r_" + Date.now(),
+            id: newId,
             clientName: nameVal,
             phone: phoneVal,
             type: "produto",
@@ -778,46 +878,86 @@ class LocalBizApp {
             notes: `Retirada agendada. Total: R$ ${this.formatPrice(totalCost)}`
         };
 
-        this.db.bookings.push(newReservation);
-        this.saveDatabase();
+        try {
+            if (isFirebaseConfigured) {
+                const { id, ...data } = newReservation;
+                await db.collection("bookings").doc(newId).set(data);
+            }
+            this.db.bookings.push(newReservation);
+            this.saveDatabase();
 
-        this.showToast("Reserva salva com sucesso!");
-        this.closeModal("modal-reserve");
-        this.formReserve.reset();
+            this.showToast("Reserva salva com sucesso!");
+            this.closeModal("modal-reserve");
+            this.formReserve.reset();
 
-        // Redirect to WhatsApp Link
-        const message = `Olá! Gostaria de reservar o produto no catálogo:\n\n` +
-                        `🎁 *Produto:* ${product.name}\n` +
-                        `🔢 *Quantidade:* ${qtyVal} unidade(s)\n` +
-                        `💰 *Total:* R$ ${this.formatPrice(totalCost)}\n` +
-                        `👤 *Reservado por:* ${nameVal}\n` +
-                        `📞 *Contato:* ${this.formatPhoneDisplay(phoneVal)}\n\n` +
-                        `Vou retirar na loja física!`;
+            // Redirect to WhatsApp Link
+            const message = `Olá! Gostaria de reservar o produto no catálogo:\n\n` +
+                            `🎁 *Produto:* ${product.name}\n` +
+                            `🔢 *Quantidade:* ${qtyVal} unidade(s)\n` +
+                            `💰 *Total:* R$ ${this.formatPrice(totalCost)}\n` +
+                            `👤 *Reservado por:* ${nameVal}\n` +
+                            `📞 *Contato:* ${this.formatPhoneDisplay(phoneVal)}\n\n` +
+                            `Vou retirar na loja física!`;
 
-        const waUrl = `https://api.whatsapp.com/send?phone=${this.db.settings.phone}&text=${encodeURIComponent(message)}`;
-        
-        setTimeout(() => {
-            window.open(waUrl, "_blank");
-        }, 800);
+            const waUrl = `https://api.whatsapp.com/send?phone=${this.db.settings.phone}&text=${encodeURIComponent(message)}`;
+            
+            setTimeout(() => {
+                window.open(waUrl, "_blank");
+            }, 800);
+        } catch (err) {
+            console.error("Failed to save reservation", err);
+            this.showToast("Erro ao processar a reserva.", "error");
+        }
     }
 
     // Admin Dashboard Authorization
-    handleAdminLogin(e) {
+    async handleAdminLogin(e) {
         e.preventDefault();
+        const email = document.getElementById("admin-email").value.trim();
         const pass = document.getElementById("admin-password").value;
-        if (pass === "admin") {
-            sessionStorage.setItem("admin_logged_in", "true");
-            this.closeModal("modal-admin-login");
-            this.formAdminLogin.reset();
-            this.openAdminDashboard();
+
+        if (isFirebaseConfigured) {
+            try {
+                this.showToast("Autenticando...");
+                await auth.signInWithEmailAndPassword(email, pass);
+                sessionStorage.setItem("admin_logged_in", "true");
+                this.closeModal("modal-admin-login");
+                this.formAdminLogin.reset();
+                this.openAdminDashboard();
+                this.showToast("Acesso administrativo autorizado!");
+            } catch (err) {
+                console.error("Firebase Auth Error:", err);
+                this.showToast("E-mail ou senha incorretos!", "error");
+            }
         } else {
-            this.showToast("Senha incorreta. Tente novamente!", "error");
+            if (email === "admin@admin.com" && pass === "admin") {
+                sessionStorage.setItem("admin_logged_in", "true");
+                this.closeModal("modal-admin-login");
+                this.formAdminLogin.reset();
+                this.openAdminDashboard();
+                this.showToast("Acesso administrativo (Modo local)!");
+            } else {
+                this.showToast("E-mail ou senha incorretos!", "error");
+            }
         }
     }
 
     checkAdminSession() {
-        if (sessionStorage.getItem("admin_logged_in") === "true") {
-            this.btnAdminOpen.innerHTML = `<i class="fa-solid fa-unlock-keyhole"></i> Painel Ativo`;
+        if (isFirebaseConfigured) {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    sessionStorage.setItem("admin_logged_in", "true");
+                    this.btnAdminOpen.innerHTML = `<i class="fa-solid fa-unlock-keyhole"></i> Painel Ativo`;
+                } else {
+                    sessionStorage.removeItem("admin_logged_in");
+                    this.btnAdminOpen.innerHTML = `<i class="fa-solid fa-lock"></i> Painel Admin`;
+                    this.adminDashboard.classList.remove("active");
+                }
+            });
+        } else {
+            if (sessionStorage.getItem("admin_logged_in") === "true") {
+                this.btnAdminOpen.innerHTML = `<i class="fa-solid fa-unlock-keyhole"></i> Painel Ativo`;
+            }
         }
     }
 
@@ -827,7 +967,14 @@ class LocalBizApp {
         this.renderAdminBookings();
     }
 
-    handleAdminLogout() {
+    async handleAdminLogout() {
+        if (isFirebaseConfigured) {
+            try {
+                await auth.signOut();
+            } catch (err) {
+                console.error("Firebase SignOut Error:", err);
+            }
+        }
         sessionStorage.removeItem("admin_logged_in");
         this.adminDashboard.classList.remove("active");
         this.btnAdminOpen.innerHTML = `<i class="fa-solid fa-lock"></i> Painel Admin`;
@@ -835,7 +982,7 @@ class LocalBizApp {
     }
 
     // Update branding and general parameters
-    handleSettingsSubmit(e) {
+    async handleSettingsSubmit(e) {
         e.preventDefault();
 
         this.db.settings.storeName = document.getElementById("settings-store-name").value.trim();
@@ -858,10 +1005,18 @@ class LocalBizApp {
         this.db.settings.hoursSundayStart = document.getElementById("settings-hours-sun-start").value;
         this.db.settings.hoursSundayEnd = document.getElementById("settings-hours-sun-end").value;
 
-        this.saveDatabase();
-        this.applyBranding();
-        this.renderCatalog();
-        this.showToast("Configurações atualizadas com sucesso!");
+        try {
+            if (isFirebaseConfigured) {
+                await db.collection("settings").doc("store").set(this.db.settings);
+            }
+            this.saveDatabase();
+            this.applyBranding();
+            this.renderCatalog();
+            this.showToast("Configurações salvas com sucesso!");
+        } catch (err) {
+            console.error("Failed to save settings to Firebase", err);
+            this.showToast("Erro ao salvar as configurações.", "error");
+        }
     }
 
     // Catalog Administration Form logic
@@ -888,7 +1043,7 @@ class LocalBizApp {
         this.openModal("modal-catalog-form");
     }
 
-    handleCatalogFormSubmit(e) {
+    async handleCatalogFormSubmit(e) {
         e.preventDefault();
 
         const id = this.catalogItemId.value;
@@ -899,45 +1054,78 @@ class LocalBizApp {
         const image = document.getElementById("catalog-item-image").value.trim();
         const description = document.getElementById("catalog-item-description").value.trim();
 
-        if (id) {
-            // Edit mode
-            const index = this.db.catalog.findIndex(i => i.id === id);
-            if (index !== -1) {
-                this.db.catalog[index] = { id, name, type, price, category, image, description };
-                this.showToast("Item atualizado no catálogo!");
+        try {
+            if (id) {
+                // Edit mode
+                const index = this.db.catalog.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    const updatedItem = { id, name, type, price, category, image, description };
+                    this.db.catalog[index] = updatedItem;
+                    
+                    if (isFirebaseConfigured) {
+                        const { id: _, ...data } = updatedItem;
+                        await db.collection("catalog").doc(id).set(data);
+                    }
+                    this.showToast("Item atualizado no catálogo!");
+                }
+            } else {
+                // New mode
+                const newId = "c_" + Date.now();
+                const newItem = {
+                    id: newId,
+                    name, type, price, category, image, description
+                };
+                
+                if (isFirebaseConfigured) {
+                    const { id: _, ...data } = newItem;
+                    await db.collection("catalog").doc(newId).set(data);
+                }
+                this.db.catalog.push(newItem);
+                this.showToast("Novo item inserido no catálogo!");
             }
-        } else {
-            // New mode
-            const newItem = {
-                id: "c_" + Date.now(),
-                name, type, price, category, image, description
-            };
-            this.db.catalog.push(newItem);
-            this.showToast("Novo item inserido no catálogo!");
-        }
 
-        this.saveDatabase();
-        this.closeModal("modal-catalog-form");
-        this.renderCatalog();
-        this.renderAdminCatalog();
-    }
-
-    deleteCatalogItem(itemId) {
-        if (confirm("Deseja realmente excluir este item do catálogo?")) {
-            this.db.catalog = this.db.catalog.filter(i => i.id !== itemId);
             this.saveDatabase();
+            this.closeModal("modal-catalog-form");
             this.renderCatalog();
             this.renderAdminCatalog();
-            this.showToast("Item removido do catálogo.", "error");
+        } catch (err) {
+            console.error("Failed to save catalog item", err);
+            this.showToast("Erro ao salvar o item.", "error");
         }
     }
 
-    deleteBooking(bookingId) {
+    async deleteCatalogItem(itemId) {
+        if (confirm("Deseja realmente excluir este item do catálogo?")) {
+            try {
+                if (isFirebaseConfigured) {
+                    await db.collection("catalog").doc(itemId).delete();
+                }
+                this.db.catalog = this.db.catalog.filter(i => i.id !== itemId);
+                this.saveDatabase();
+                this.renderCatalog();
+                this.renderAdminCatalog();
+                this.showToast("Item removido do catálogo.", "error");
+            } catch (err) {
+                console.error("Failed to delete item", err);
+                this.showToast("Erro ao remover o item.", "error");
+            }
+        }
+    }
+
+    async deleteBooking(bookingId) {
         if (confirm("Confirmar a exclusão deste agendamento/reserva?")) {
-            this.db.bookings = this.db.bookings.filter(b => b.id !== bookingId);
-            this.saveDatabase();
-            this.renderAdminBookings();
-            this.showToast("Registro excluído.", "error");
+            try {
+                if (isFirebaseConfigured) {
+                    await db.collection("bookings").doc(bookingId).delete();
+                }
+                this.db.bookings = this.db.bookings.filter(b => b.id !== bookingId);
+                this.saveDatabase();
+                this.renderAdminBookings();
+                this.showToast("Registro excluído.", "error");
+            } catch (err) {
+                console.error("Failed to delete booking", err);
+                this.showToast("Erro ao excluir o registro.", "error");
+            }
         }
     }
 
