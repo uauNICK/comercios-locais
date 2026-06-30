@@ -551,7 +551,7 @@ class LocalBizApp {
             const actionText = isOutOfStock ? "Consultar estoque" : (isService ? "Entrar em contato" : "Reservar e Retirar");
             const actionIcon = isOutOfStock ? "fa-circle-xmark" : (isService ? "fa-comments" : "fa-bag-shopping");
             const actionClass = isOutOfStock ? "btn-out-of-stock-trigger" : (isService ? "btn-booking-trigger" : "btn-reserve-trigger");
-            const actionStyle = isOutOfStock ? "style='background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;'" : "";
+            const actionStyle = isOutOfStock ? "background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;" : "";
             const actionDisabledAttr = "";
 
             card.innerHTML = `
@@ -568,7 +568,7 @@ class LocalBizApp {
                     <p class="card-desc">${item.description}</p>
                     <div class="card-footer">
                         <span class="card-price">R$ ${this.formatPrice(item.price)}</span>
-                        <button class="btn-primary ${actionClass}" data-id="${item.id}" ${actionDisabledAttr} ${actionStyle} style="padding: 8px 16px; font-size: 0.85rem;">
+                        <button class="btn-primary ${actionClass}" data-id="${item.id}" ${actionDisabledAttr} style="padding: 8px 16px; font-size: 0.85rem; ${actionStyle}">
                             <i class="fa-solid ${actionIcon}"></i> ${actionText}
                         </button>
                     </div>
@@ -701,11 +701,12 @@ class LocalBizApp {
             const waMsg = encodeURIComponent(`Olá ${booking.clientName}! Estou entrando em contato sobre o seu agendamento/reserva ${displayOrderNum}de ${booking.itemName}.`);
             const waLink = `https://wa.me/${booking.phone}?text=${waMsg}`;
 
-            const statusBadge = booking.status === "confirmado"
+            const bookingStatus = booking.status || (booking.type === "servico" ? "confirmado" : "pendente");
+            const statusBadge = bookingStatus === "confirmado"
                 ? `<span class="badge" style="background-color:rgba(16, 185, 129, 0.1); color:#10b981; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.7rem; padding: 2px 6px; margin-left: 6px;">Confirmado</span>`
                 : `<span class="badge" style="background-color:rgba(245, 158, 11, 0.1); color:#f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); font-size: 0.7rem; padding: 2px 6px; margin-left: 6px;">Pendente</span>`;
 
-            const showConfirmBtn = booking.type === "produto" && booking.status === "pendente";
+            const showConfirmBtn = booking.type === "produto" && bookingStatus === "pendente";
             const confirmBtnHtml = showConfirmBtn
                 ? `<button class="table-action-btn confirm btn-confirm-booking" data-id="${booking.id}" title="Confirmar Pagamento e Venda" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);"><i class="fa-solid fa-check"></i></button>`
                 : '';
