@@ -1668,7 +1668,6 @@ class LocalBizApp {
         this.renderFilters();
         this.showToast(`Categoria "${name}" adicionada com sucesso!`);
     }
-}
 
     renderStockAlerts() {
         const alertBox = document.getElementById("admin-stock-alerts");
