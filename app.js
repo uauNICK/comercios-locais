@@ -952,8 +952,12 @@ class LocalBizApp {
 
         try {
             if (isFirebaseConfigured) {
-                const { id, ...data } = newBooking;
-                await db.collection("bookings").doc(newId).set(data);
+                try {
+                    const { id, ...data } = newBooking;
+                    await db.collection("bookings").doc(newId).set(data);
+                } catch (fsErr) {
+                    console.warn("Falha ao salvar agendamento no Firebase (continuando localmente):", fsErr);
+                }
             }
             this.db.bookings.push(newBooking);
             this.saveDatabase();
@@ -1051,13 +1055,21 @@ class LocalBizApp {
             if (product.stock !== null && product.stock !== undefined) {
                 product.stock -= qtyVal;
                 if (isFirebaseConfigured) {
-                    await db.collection("catalog").doc(productId).update({ stock: product.stock });
+                    try {
+                        await db.collection("catalog").doc(productId).set({ stock: product.stock }, { merge: true });
+                    } catch (fsErr) {
+                        console.warn("Falha ao atualizar estoque no Firebase (continuando localmente):", fsErr);
+                    }
                 }
             }
 
             if (isFirebaseConfigured) {
-                const { id, ...data } = newReservation;
-                await db.collection("bookings").doc(newId).set(data);
+                try {
+                    const { id, ...data } = newReservation;
+                    await db.collection("bookings").doc(newId).set(data);
+                } catch (fsErr) {
+                    console.warn("Falha ao salvar reserva no Firebase (continuando localmente):", fsErr);
+                }
             }
             this.db.bookings.push(newReservation);
             this.saveDatabase();
