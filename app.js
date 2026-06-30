@@ -304,6 +304,8 @@ class LocalBizApp {
         this.btnCatalogAdd = document.getElementById("btn-catalog-add");
         this.catalogItemId = document.getElementById("catalog-item-id");
         this.catalogItemImageFile = document.getElementById("catalog-item-image-file");
+        this.catalogItemStock = document.getElementById("catalog-item-stock");
+        this.groupItemStock = document.getElementById("group-item-stock");
 
         // Setup Copyright Year
         if (this.yearCopy) this.yearCopy.textContent = new Date().getFullYear();
@@ -532,24 +534,40 @@ class LocalBizApp {
             card.className = "glass-card catalog-card";
             
             const isService = item.type === "servico";
-            const actionText = isService ? "Entrar em contato" : "Reservar e Retirar";
-            const actionIcon = isService ? "fa-comments" : "fa-bag-shopping";
-            const actionClass = isService ? "btn-booking-trigger" : "btn-reserve-trigger";
+            
+            // Stock checks
+            let stockBadgeHtml = "";
+            let isOutOfStock = false;
+            if (item.type === "produto" && item.stock !== null && item.stock !== undefined) {
+                const stockNum = parseInt(item.stock);
+                if (stockNum <= 0) {
+                    stockBadgeHtml = `<span class="badge" style="position: absolute; top: 12px; right: 12px; z-index: 5; background-color: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">Esgotado</span>`;
+                    isOutOfStock = true;
+                } else {
+                    stockBadgeHtml = `<span class="badge" style="position: absolute; top: 12px; right: 12px; z-index: 5; background-color: rgba(16, 185, 129, 0.15); color: var(--accent-color); border-color: rgba(16, 185, 129, 0.3);">${stockNum} restando</span>`;
+                }
+            }
+
+            const actionText = isOutOfStock ? "Esgotado" : (isService ? "Entrar em contato" : "Reservar e Retirar");
+            const actionIcon = isOutOfStock ? "fa-circle-xmark" : (isService ? "fa-comments" : "fa-bag-shopping");
+            const actionClass = isOutOfStock ? "" : (isService ? "btn-booking-trigger" : "btn-reserve-trigger");
+            const actionDisabledAttr = isOutOfStock ? "disabled style='opacity: 0.5; cursor: not-allowed; filter: grayscale(1);'" : "";
 
             card.innerHTML = `
-                <div class="card-img-wrapper">
+                <div class="card-img-wrapper" style="${isOutOfStock ? 'filter: grayscale(0.8);' : ''}">
                     ${this.isVideo(item.image) 
                         ? `<video src="${item.image}" autoplay loop muted playsinline class="card-img" style="object-fit: cover; width: 100%; height: 100%;"></video>` 
                         : `<img src="${item.image}" alt="${item.name}" class="card-img" onerror="this.src='https://images.unsplash.com/photo-1594122230689-45899d9e6f69?auto=format&fit=crop&q=80&w=400'">`
                     }
                     <span class="badge" style="position: absolute; top: 12px; left: 12px; z-index: 5;">${item.category}</span>
+                    ${stockBadgeHtml}
                 </div>
                 <div class="card-body">
                     <h3 class="card-title">${item.name}</h3>
                     <p class="card-desc">${item.description}</p>
                     <div class="card-footer">
                         <span class="card-price">R$ ${this.formatPrice(item.price)}</span>
-                        <button class="btn-primary ${actionClass}" data-id="${item.id}" style="padding: 8px 16px; font-size: 0.85rem;">
+                        <button class="btn-primary ${actionClass}" data-id="${item.id}" ${actionDisabledAttr} style="padding: 8px 16px; font-size: 0.85rem;">
                             <i class="fa-solid ${actionIcon}"></i> ${actionText}
                         </button>
                     </div>
@@ -594,6 +612,7 @@ class LocalBizApp {
                     <span style="font-size: 0.75rem; color: var(--accent-color); font-weight:600; text-transform: uppercase;">${typeLabel}</span>
                     <h4 style="margin: 4px 0 8px 0; font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</h4>
                     <span class="card-price" style="font-size: 1.1rem;">R$ ${this.formatPrice(item.price)}</span>
+                    ${item.stock !== null && item.stock !== undefined ? `<br><span style="font-size: 0.8rem; color: var(--text-secondary);">Estoque: <strong>${item.stock}</strong></span>` : ''}
                 </div>
             `;
             grid.appendChild(card);
@@ -951,6 +970,16 @@ class LocalBizApp {
                 mediaContainer.innerHTML = `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" onerror="this.src='https://images.unsplash.com/photo-1594122230689-45899d9e6f69?auto=format&fit=crop&q=80&w=400'">`;
             }
         }
+
+        const displayStock = document.getElementById("reserve-product-stock-display");
+        const inputQty = document.getElementById("reserve-qty");
+        if (product.stock !== null && product.stock !== undefined) {
+            displayStock.textContent = `Disponível: ${product.stock} unidades`;
+            inputQty.max = product.stock;
+        } else {
+            displayStock.textContent = "Disponível: Ilimitado";
+            inputQty.removeAttribute("max");
+        }
         
         document.getElementById("reserve-qty").value = "1";
 
@@ -965,6 +994,13 @@ class LocalBizApp {
         const nameVal = document.getElementById("reserve-name").value.trim();
         const phoneVal = this.cleanPhoneNumber(document.getElementById("reserve-phone").value);
         const qtyVal = parseInt(document.getElementById("reserve-qty").value);
+
+        if (product.stock !== null && product.stock !== undefined) {
+            if (qtyVal > product.stock) {
+                this.showToast(`Quantidade solicitada excede o estoque disponível (${product.stock} un)!`, "error");
+                return;
+            }
+        }
 
         const totalCost = product.price * qtyVal;
 
@@ -982,6 +1018,13 @@ class LocalBizApp {
         };
 
         try {
+            if (product.stock !== null && product.stock !== undefined) {
+                product.stock -= qtyVal;
+                if (isFirebaseConfigured) {
+                    await db.collection("catalog").doc(productId).update({ stock: product.stock });
+                }
+            }
+
             if (isFirebaseConfigured) {
                 const { id, ...data } = newReservation;
                 await db.collection("bookings").doc(newId).set(data);
@@ -992,6 +1035,8 @@ class LocalBizApp {
             this.showToast("Reserva salva com sucesso!");
             this.closeModal("modal-reserve");
             this.formReserve.reset();
+            this.renderCatalog();
+            this.renderAdminCatalog();
 
             // Redirect to WhatsApp Link
             const message = `Olá! Gostaria de reservar o produto no catálogo:\n\n` +
@@ -1145,15 +1190,30 @@ class LocalBizApp {
 
         // Populate Category Dropdown select options
         const categorySelect = document.getElementById("catalog-item-category-id");
+        const categories = this.db.settings.categories || [];
         if (categorySelect) {
             categorySelect.innerHTML = "";
-            const categories = this.db.settings.categories || [];
             categories.forEach(cat => {
                 const opt = document.createElement("option");
                 opt.value = cat.id;
                 opt.textContent = `${cat.name} (${cat.type === 'servico' ? 'Contato' : 'Reserva'})`;
                 categorySelect.appendChild(opt);
             });
+
+            // Sync stock field visibility
+            const syncStockVisibility = () => {
+                const catId = categorySelect.value;
+                const activeCat = categories.find(c => c.id === catId);
+                const isProduct = activeCat && activeCat.type === "produto";
+                const groupStock = document.getElementById("group-item-stock");
+                if (groupStock) {
+                    groupStock.style.display = isProduct ? "block" : "none";
+                }
+            };
+            categorySelect.removeEventListener("change", categorySelect._syncFn);
+            categorySelect._syncFn = syncStockVisibility;
+            categorySelect.addEventListener("change", syncStockVisibility);
+            syncStockVisibility();
         }
         
         if (itemId) {
@@ -1167,14 +1227,19 @@ class LocalBizApp {
             document.getElementById("catalog-item-image").value = item.image;
             document.getElementById("catalog-item-description").value = item.description;
 
+            const stockVal = item.stock !== undefined && item.stock !== null ? item.stock : "";
+            document.getElementById("catalog-item-stock").value = stockVal;
+
             // Preselect correct category ID option based on name match
             const catObj = (this.db.settings.categories || []).find(c => c.name === item.category);
             if (catObj && categorySelect) {
                 categorySelect.value = catObj.id;
+                syncStockVisibility(); // Trigger explicit visibility check
             }
         } else {
             this.catalogFormTitle.textContent = "Novo Item no Catálogo";
             this.catalogItemId.value = "";
+            document.getElementById("catalog-item-stock").value = "";
         }
 
         this.openModal("modal-catalog-form");
@@ -1196,6 +1261,9 @@ class LocalBizApp {
         const type = selectedCat.type;
         const category = selectedCat.name;
 
+        const stockInput = document.getElementById("catalog-item-stock").value;
+        const stock = type === "produto" && stockInput !== "" ? parseInt(stockInput) : null;
+
         const file = this.catalogItemImageFile && this.catalogItemImageFile.files[0];
 
         try {
@@ -1212,7 +1280,7 @@ class LocalBizApp {
                 // Edit mode
                 const index = this.db.catalog.findIndex(i => i.id === id);
                 if (index !== -1) {
-                    const updatedItem = { id, name, type, price, category, image: imageUrl, description };
+                    const updatedItem = { id, name, type, price, category, image: imageUrl, description, stock };
                     this.db.catalog[index] = updatedItem;
                     
                     if (isFirebaseConfigured) {
@@ -1226,7 +1294,7 @@ class LocalBizApp {
                 const newId = "c_" + Date.now();
                 const newItem = {
                     id: newId,
-                    name, type, price, category, image: imageUrl, description
+                    name, type, price, category, image: imageUrl, description, stock
                 };
                 
                 if (isFirebaseConfigured) {

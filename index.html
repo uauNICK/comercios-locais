@@ -180,6 +180,7 @@
                 <div class="selected-product-info">
                     <span class="selected-product-name" id="reserve-product-name">Pomada Modeladora</span>
                     <span class="selected-product-price" id="reserve-product-price">R$ 45,00</span>
+                    <small id="reserve-product-stock-display" style="color: var(--accent-color); font-weight: 600; margin-top: 4px; display: block;"></small>
                 </div>
             </div>
 
@@ -499,6 +500,10 @@
                     <div class="form-group">
                         <label class="form-label" for="catalog-item-price">Valor (R$)</label>
                         <input type="number" id="catalog-item-price" class="form-control" step="0.01" placeholder="0,00" required>
+                    </div>
+                    <div class="form-group" id="group-item-stock" style="display: none;">
+                        <label class="form-label" for="catalog-item-stock">Quantidade em Estoque</label>
+                        <input type="number" id="catalog-item-stock" class="form-control" placeholder="Deixe em branco p/ ilimitado">
                     </div>
                     <input type="hidden" id="catalog-item-type">
                     <input type="hidden" id="catalog-item-category">
