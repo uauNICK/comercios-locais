@@ -251,6 +251,14 @@
         <!-- Dynamic Content Panel -->
         <main class="admin-panel">
             
+            <!-- ALERT BOX: Low/Out of Stock warnings -->
+            <div id="admin-stock-alerts" style="display: none; margin-bottom: 25px; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05);" class="glass-card">
+                <h3 style="color: #ef4444; font-size: 1.15rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-triangle-exclamation"></i> Alertas de Estoque Crítico</h3>
+                <div id="admin-stock-alerts-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- populated dynamically -->
+                </div>
+            </div>
+            
             <!-- TAB 1: BRANDING & SETTINGS -->
             <div class="admin-tab-pane active" id="tab-settings">
                 <div class="admin-panel-header">
@@ -551,6 +559,23 @@
             <div style="display: flex; gap: 12px;">
                 <button class="btn-secondary" id="btn-delivery-checkout-cancel" style="flex: 1; justify-content: center; height: 46px; font-size: 0.9rem;">Voltar</button>
                 <button class="btn-primary" id="btn-delivery-checkout-confirm" style="flex: 1; justify-content: center; height: 46px; font-size: 0.9rem;"><i class="fa-brands fa-whatsapp"></i> Ir p/ WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Product Out Of Stock Warning -->
+    <div class="modal-overlay" id="modal-out-of-stock">
+        <div class="modal-content glass-card" style="max-width: 440px; text-align: center; padding: 30px;">
+            <div style="font-size: 3.5rem; color: #ef4444; margin-bottom: 20px;">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <h3 class="modal-title" style="margin-bottom: 12px; font-size: 1.4rem; color: #ef4444;">Produto Esgotado</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 0.95rem; line-height: 1.5;" id="out-of-stock-modal-desc">
+                Lamentamos, mas este item está temporariamente indisponível no momento.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn-primary" id="btn-out-of-stock-whatsapp" style="width: 100%; justify-content: center; height: 46px; background: var(--accent-gradient);"><i class="fa-brands fa-whatsapp"></i> Consultar estoque no WhatsApp</button>
+                <button class="btn-secondary" id="btn-out-of-stock-close" style="width: 100%; justify-content: center; height: 46px;">Voltar ao Cardápio</button>
             </div>
         </div>
     </div>

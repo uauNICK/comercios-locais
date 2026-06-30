@@ -548,10 +548,11 @@ class LocalBizApp {
                 }
             }
 
-            const actionText = isOutOfStock ? "Esgotado" : (isService ? "Entrar em contato" : "Reservar e Retirar");
+            const actionText = isOutOfStock ? "Consultar estoque" : (isService ? "Entrar em contato" : "Reservar e Retirar");
             const actionIcon = isOutOfStock ? "fa-circle-xmark" : (isService ? "fa-comments" : "fa-bag-shopping");
-            const actionClass = isOutOfStock ? "" : (isService ? "btn-booking-trigger" : "btn-reserve-trigger");
-            const actionDisabledAttr = isOutOfStock ? "disabled style='opacity: 0.5; cursor: not-allowed; filter: grayscale(1);'" : "";
+            const actionClass = isOutOfStock ? "btn-out-of-stock-trigger" : (isService ? "btn-booking-trigger" : "btn-reserve-trigger");
+            const actionStyle = isOutOfStock ? "style='background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;'" : "";
+            const actionDisabledAttr = "";
 
             card.innerHTML = `
                 <div class="card-img-wrapper" style="${isOutOfStock ? 'filter: grayscale(0.8);' : ''}">
@@ -567,7 +568,7 @@ class LocalBizApp {
                     <p class="card-desc">${item.description}</p>
                     <div class="card-footer">
                         <span class="card-price">R$ ${this.formatPrice(item.price)}</span>
-                        <button class="btn-primary ${actionClass}" data-id="${item.id}" ${actionDisabledAttr} style="padding: 8px 16px; font-size: 0.85rem;">
+                        <button class="btn-primary ${actionClass}" data-id="${item.id}" ${actionDisabledAttr} ${actionStyle} style="padding: 8px 16px; font-size: 0.85rem;">
                             <i class="fa-solid ${actionIcon}"></i> ${actionText}
                         </button>
                     </div>
@@ -583,6 +584,27 @@ class LocalBizApp {
 
         document.querySelectorAll(".btn-reserve-trigger").forEach(btn => {
             btn.addEventListener("click", (e) => this.openReserveModal(e.currentTarget.dataset.id));
+        });
+
+        document.querySelectorAll(".btn-out-of-stock-trigger").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const item = this.db.catalog.find(i => i.id === e.currentTarget.dataset.id);
+                if (item) {
+                    const desc = document.getElementById("out-of-stock-modal-desc");
+                    if (desc) {
+                        desc.innerHTML = `Lamentamos, mas o produto <strong>${item.name}</strong> está temporariamente esgotado (estoque zerado). Deseja enviar uma consulta pelo WhatsApp para saber quando receberemos novas unidades?`;
+                    }
+                    const btnWa = document.getElementById("btn-out-of-stock-whatsapp");
+                    if (btnWa) {
+                        const msg = `Olá! Vi no site que o produto "${item.name}" está esgotado. Gostaria de consultar com a loja a disponibilidade ou previsão de chegada de novas unidades.`;
+                        btnWa.onclick = () => {
+                            window.open(`https://api.whatsapp.com/send?phone=${this.db.settings.phone}&text=${encodeURIComponent(msg)}`, "_blank");
+                            this.closeModal("modal-out-of-stock");
+                        };
+                    }
+                    this.openModal("modal-out-of-stock");
+                }
+            });
         });
     }
 
@@ -833,6 +855,14 @@ class LocalBizApp {
                 }
             });
         }
+
+        // Close out-of-stock modal
+        const btnCloseOutOfStock = document.getElementById("btn-out-of-stock-close");
+        if (btnCloseOutOfStock) {
+            btnCloseOutOfStock.addEventListener("click", () => {
+                this.closeModal("modal-out-of-stock");
+            });
+        }
     }
 
     // Modal Control Utils
@@ -977,7 +1007,7 @@ class LocalBizApp {
             displayStock.textContent = `Disponível: ${product.stock} unidades`;
             inputQty.max = product.stock;
         } else {
-            displayStock.textContent = "Disponível: Ilimitado";
+            displayStock.textContent = "Consultar estoque com a loja";
             inputQty.removeAttribute("max");
         }
         
@@ -1039,13 +1069,22 @@ class LocalBizApp {
             this.renderAdminCatalog();
 
             // Redirect to WhatsApp Link
+            let stockWarningText = "";
+            if (product.stock !== null && product.stock !== undefined) {
+                if (product.stock === 0) {
+                    stockWarningText = `\n\n🚨 *[ALERTA DE ESTOQUE]* O estoque do produto *${product.name}* acaba de *ESGOTAR* (0 unidades restantes)!`;
+                } else if (product.stock < 5) {
+                    stockWarningText = `\n\n⚠️ *[ALERTA DE ESTOQUE]* O estoque do produto *${product.name}* está baixo (restam apenas *${product.stock}* unidades)!`;
+                }
+            }
+
             const message = `Olá! Gostaria de reservar o produto no catálogo:\n\n` +
                             `🎁 *Produto:* ${product.name}\n` +
                             `🔢 *Quantidade:* ${qtyVal} unidade(s)\n` +
                             `💰 *Total:* R$ ${this.formatPrice(totalCost)}\n` +
                             `👤 *Reservado por:* ${nameVal}\n` +
                             `📞 *Contato:* ${this.formatPhoneDisplay(phoneVal)}\n\n` +
-                            `Vou retirar na loja física!`;
+                            `Vou retirar na loja física!${stockWarningText}`;
 
             const waUrl = `https://api.whatsapp.com/send?phone=${this.db.settings.phone}&text=${encodeURIComponent(message)}`;
             
@@ -1114,6 +1153,7 @@ class LocalBizApp {
         this.adminDashboard.classList.add("active");
         this.renderAdminCatalog();
         this.renderAdminBookings();
+        this.renderStockAlerts();
     }
 
     async handleAdminLogout() {
@@ -1311,6 +1351,7 @@ class LocalBizApp {
             this.closeModal("modal-catalog-form");
             this.renderCatalog();
             this.renderAdminCatalog();
+            this.renderStockAlerts();
         } catch (err) {
             console.error("Failed to save catalog item", err);
             this.showToast(err.message || "Erro ao salvar o item.", "error");
@@ -1327,6 +1368,7 @@ class LocalBizApp {
                 this.saveDatabase();
                 this.renderCatalog();
                 this.renderAdminCatalog();
+                this.renderStockAlerts();
                 this.showToast("Item removido do catálogo.", "error");
             } catch (err) {
                 console.error("Failed to delete item", err);
@@ -1625,6 +1667,34 @@ class LocalBizApp {
         this.renderAdminCategories();
         this.renderFilters();
         this.showToast(`Categoria "${name}" adicionada com sucesso!`);
+    }
+}
+
+    renderStockAlerts() {
+        const alertBox = document.getElementById("admin-stock-alerts");
+        const alertList = document.getElementById("admin-stock-alerts-list");
+        if (!alertBox || !alertList) return;
+
+        alertList.innerHTML = "";
+        const lowStockItems = this.db.catalog.filter(item => 
+            item.type === "produto" && 
+            item.stock !== null && 
+            item.stock !== undefined && 
+            item.stock < 5
+        );
+        
+        if (lowStockItems.length > 0) {
+            alertBox.style.display = "block";
+            lowStockItems.forEach(item => {
+                const isZero = parseInt(item.stock) === 0;
+                const alertHtml = isZero 
+                    ? `<div style="color: #ef4444; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-xmark"></i> O produto <strong>${item.name}</strong> está com estoque ESGOTADO (0 unidades)!</div>`
+                    : `<div style="color: #f59e0b; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-circle-exclamation"></i> O produto <strong>${item.name}</strong> está com estoque baixo (apenas ${item.stock} unidades restantes)!</div>`;
+                alertList.innerHTML += alertHtml;
+            });
+        } else {
+            alertBox.style.display = "none";
+        }
     }
 }
 
